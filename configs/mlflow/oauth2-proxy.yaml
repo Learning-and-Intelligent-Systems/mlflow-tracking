@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+  namespace: mlflow
+spec:
+  selector:
+    k8s-app: oauth2-proxy
+  ports:
+    - protocol: TCP
+      port: 4180
+      targetPort: 4180
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: oauth2-proxy
+  name: oauth2-proxy
+  namespace: mlflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        k8s-app: oauth2-proxy
+    spec:
+      containers:
+      - args:
+        - --provider=github
+        - --email-domain=*
+        - --upstream=file:///dev/null
+        - --http-address=0.0.0.0:4180
+        - --github-org=Learning-and-Intelligent-Systems
+        - --login-url=https://github.mit.edu/login/oauth/authorize
+        - --redeem-url=https://github.mit.edu/login/oauth/access_token
+        - --validate-url=https://github.mit.edu/api/v3
+        envFrom:
+        - configMapRef:
+            name: oauth2-proxy
+        - secretRef:
+            name: oauth2-proxy
+        image: quay.io/pusher/oauth2_proxy
+        imagePullPolicy: Always
+        name: oauth2-proxy
+        ports:
+        - containerPort: 4180
+          protocol: TCP

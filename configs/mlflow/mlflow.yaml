@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-tracking
+  namespace: mlflow
+spec:
+  selector:
+    app: mlflow-tracking
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-tracking
+  namespace: mlflow
+  labels:
+    app: mlflow-tracking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow-tracking
+  template:
+    metadata:
+      labels:
+        app: mlflow-tracking
+    spec:
+      containers:
+      - name: mlflow-server
+        image: learningandintelligentsystems/mlflow-tracking
+        command: ["mlflow"]
+        args: ["server",
+               "--backend-store-uri", "$(MLFLOW_TRACKING_URI)",
+               "--default-artifact-root", "$(MLFLOW_S3_ENDPOINT_URL)/mlflow",
+               "--host", "0.0.0.0"]
+        env:
+          - name: MLFLOW_TRACKING_URI
+            valueFrom:
+              secretKeyRef:
+                name: mlflow-tracking
+                key: tracking-uri
+          - name: MLFLOW_S3_ENDPOINT_URL
+            valueFrom:
+              configMapKeyRef:
+                name: csail-ceph-s3
+                key: S3_ENTRYPOINT
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              configMapKeyRef:
+                name: csail-ceph-s3
+                key: S3_ACCESS
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: csail-ceph-s3
+                key: S3_SECRET
+        ports:
+        - containerPort: 5000
