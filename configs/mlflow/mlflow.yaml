@@ -35,7 +35,7 @@ spec:
         command: ["mlflow"]
         args: ["server",
                "--backend-store-uri", "$(MLFLOW_TRACKING_URI)",
-               "--default-artifact-root", "$(MLFLOW_S3_ENDPOINT_URL)/mlflow",
+               "--default-artifact-root", "s3://mlflow",
                "--host", "0.0.0.0"]
         env:
           - name: MLFLOW_TRACKING_URI
